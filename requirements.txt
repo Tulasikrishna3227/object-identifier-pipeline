@@ -1,0 +1,11 @@
+torch
+torchvision
+datasets
+transformers
+accelerate
+ultralytics
+gradio
+scikit-learn
+matplotlib
+pillow
+numpy
