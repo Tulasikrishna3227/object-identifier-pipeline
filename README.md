@@ -32,7 +32,7 @@ Image -> YOLO11 detector -> crop each object -> cats/dogs: my fine-tuned breed m
 | 2. Transfer learning | Oxford-IIIT Pets, 37 breeds, 224x224 | EfficientNet-B0, pretrained on ImageNet | **91.47%** |
 
 ![CIFAR-10 curves](curves.png)
-![CIFAR-10 confusion matrix](confusion_matrix.png)
+![CIFAR-10 confusion matrix](confusion%20matrix.png)
 ![Pets curves](pets_curves.png)
 
 ### What the errors showed
