@@ -1,5 +1,7 @@
 # Object Identifier: detect, count, name and describe objects in an image
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/Tulasikrishna3227/object-identifier-pipeline/blob/main/demo.ipynb)
+
 Upload a photo and get back every object it contains, the count, a breed name for cats and dogs, and a short description of each object.
 
 This repo is also a record of how I learned the full machine learning workflow: I trained a CNN from scratch, then fine-tuned a pretrained model, then combined trained and pretrained models into one pipeline. Every result below is measured on a held-out test set, and the failures are documented too.
@@ -32,7 +34,7 @@ Image -> YOLO11 detector -> crop each object -> cats/dogs: my fine-tuned breed m
 | 2. Transfer learning | Oxford-IIIT Pets, 37 breeds, 224x224 | EfficientNet-B0, pretrained on ImageNet | **91.47%** |
 
 ![CIFAR-10 curves](curves.png)
-![CIFAR-10 confusion matrix](confusion%20matrix.png)
+![CIFAR-10 confusion matrix](confusion_matrix.png)
 ![Pets curves](pets_curves.png)
 
 ### What the errors showed
@@ -51,6 +53,10 @@ Image -> YOLO11 detector -> crop each object -> cats/dogs: my fine-tuned breed m
 6. **Only COCO's 80 classes are detected.** Things like deer or frogs are never found. An open-vocabulary detector (Grounding DINO or YOLO-World) would fix this.
 
 ## Run it
+
+**One click (free):** press the Open in Colab badge above, choose Runtime > Change runtime type > T4 GPU, then Runtime > Run all. The notebook clones this repo, installs everything and starts the app with a public Gradio link. The first run takes about 5-8 minutes because it downloads the models.
+
+**Manual setup:**
 
 Google Colab with a T4 GPU:
 
