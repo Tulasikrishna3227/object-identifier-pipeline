@@ -34,7 +34,7 @@ Image -> YOLO11 detector -> crop each object -> cats/dogs: my fine-tuned breed m
 | 2. Transfer learning | Oxford-IIIT Pets, 37 breeds, 224x224 | EfficientNet-B0, pretrained on ImageNet | **91.47%** |
 
 ![CIFAR-10 curves](curves.png)
-![CIFAR-10 confusion matrix](confusion%20matrix.png)
+![CIFAR-10 confusion matrix](confusion_matrix.png)
 ![Pets curves](pets_curves.png)
 
 ### What the errors showed
@@ -50,7 +50,7 @@ Image -> YOLO11 detector -> crop each object -> cats/dogs: my fine-tuned breed m
 3. **Domain shift.** The 32x32 CIFAR model does much worse on real full-size photos, which is why I moved to transfer learning at 224x224.
 4. **Vision-language model hallucinations.** On a photo showing only a car interior, the description named a specific car model that couldn't be read from the image. The prompt now tells the model to name a make or model only when a badge or logo is clearly visible.
 5. **Overlapping boxes leak context.** A person's crop that includes a cat gets a description mentioning the cat. Fixing this properly needs instance segmentation to mask other objects.
-6. **Only COCO's 80 classes are detected.** Things like deer or frogs are never found. An open-vocabulary detector (Grounding DINO or YOLO-World) would fix this.
+6. **Only COCO's 80 classes are detected, and anything else is forced into the nearest one.** A red deer was detected as a sheep (50% confidence) and counted twice because two boxes overlapped. The pipeline now merges overlapping boxes more aggressively, flags detections under 60% confidence as possibly wrong, and asks the vision-language model to name the object itself instead of trusting the detector's label. A real fix is an open-vocabulary detector (Grounding DINO or YOLO-World).
 
 ## Run it
 

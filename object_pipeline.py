@@ -27,6 +27,7 @@ print("Using:", device)
 # ---------- Stage 1: detector ----------
 detector = YOLO("yolo11m.pt")          # downloads automatically; use yolo11n.pt for faster, weaker
 CONF = 0.35                            # ignore detections below 35% confidence
+LOW_CONF = 0.60                        # below this the detector label may be wrong (e.g. a deer called a sheep)
 
 # ---------- Stage 2: your breed model (optional) ----------
 CAT_BREEDS = {"abyssinian", "bengal", "birman", "bombay", "british_shorthair", "egyptian_mau",
@@ -105,7 +106,7 @@ def prep_crop(img, box, pad=0.08):
     crop.thumbnail((448, 448))
     return crop
 
-def describe(crop, label):
+def describe(crop, label, low_conf=False):
     extra = ""
     if label == "person":
         extra = " Describe clothing, pose and accessories. Do not guess identity."
@@ -118,6 +119,11 @@ def describe(crop, label):
     prompt = (f"This is a cropped image that contains a {label}. Describe ONLY the {label}, ignoring every other "
               f"object in the image: color, shape, material, notable features and condition.{extra} "
               f"Be factual and do not guess. If you are unsure about a detail, leave it out instead of writing 'unspecified'. Answer in 1-2 short sentences.")
+    if low_conf:
+        # The detector is unsure, so do NOT tell the VLM what the object is: let it name the object itself.
+        prompt = ("This is a cropped image of one object. First say what it is, then describe it: color, shape, "
+                  "material, notable features and condition. Be factual and do not guess. If you are unsure "
+                  "about a detail, leave it out. Answer in 1-2 short sentences.")
     messages = [{"role": "user", "content": [{"type": "image"}, {"type": "text", "text": prompt}]}]
     text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     inputs = processor(text=[text], images=[crop], return_tensors="pt").to(device)
@@ -131,7 +137,7 @@ def describe(crop, label):
 # ---------- Stage 4: full pipeline ----------
 def analyze(img):
     img = img.convert("RGB")
-    res = detector(img, conf=CONF, verbose=False)[0]
+    res = detector(img, conf=CONF, iou=0.5, verbose=False)[0]      # iou=0.5 merges overlapping boxes of the same class
     boxes = res.boxes.xyxy.cpu().tolist()
     labels = [res.names[int(c)] for c in res.boxes.cls.cpu().tolist()]
     confs = res.boxes.conf.cpu().tolist()
@@ -150,6 +156,8 @@ def analyze(img):
         crop = prep_crop(img, box)
 
         line = f"### {k}. {label.title()}  (detector confidence {conf * 100:.0f}%)\n"
+        if conf < LOW_CONF:
+            line += f"- **Note:** low detector confidence, so the label '{label}' may be wrong. The description below does not rely on it.\n"
         if breed_model is not None and label in {"cat", "dog"}:
             top = identify_breed(crop, label)
             if top[0][1] >= BREED_THRESHOLD:
@@ -164,7 +172,7 @@ def analyze(img):
                 line += f"- **Make/model (my trained classifier):** {top[0][0]} ({top[0][1]}%). Next guesses: {alts}\n"
             else:
                 line += f"- **Make/model:** uncertain (best guess {top[0][0]}, {top[0][1]}%). Interior or partial views are unreliable.\n"
-        line += f"- **Description:** {describe(crop, label)}\n"
+        line += f"- **Description:** {describe(crop, label, conf < LOW_CONF)}\n"
         report.append(line)
     return annotated, "\n".join(report)
 
